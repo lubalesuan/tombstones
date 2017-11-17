@@ -11,10 +11,6 @@ template <class T> void free(Pointer<T>& obj);
 template <class T>
 class Pointer {
 public:
-    // struct MyTombstone {
-    //     T* pointerToObj;
-    //     int refCount;
-    // }MyTombstone;
     Pointer<T>();
          // default constructor
         //init self???
@@ -42,22 +38,43 @@ public:
         t.incrementRefCount();
     }       
     friend void free<T>(Pointer<T>&);           // delete pointed-at object
+    T& operator*() const {
+        return (t->pointerToObj)&; //CHECK
+    }                // deferencing
+    T* operator->() const {
+        return t->pointerToObj; //CHECK
+    }                  // field dereferencing
+    Pointer<T>& operator=(const Pointer<T>& otherPointer) {
+        this->t = otherPointer->t; //does it assign same object to this pointer?
+    }       // assignment
+    friend void free<T>(Pointer<T>&)
+    {
+        this->t = NULL;
+        ~Pointer<T>();  
+    }           // delete pointed-at object
         // This is essentially the inverse of the new inside the call to
         // the bootstrapping constructor.
     //free deletes the tombstone and object and pointer
     // equality comparisons:
-    bool operator==(const Pointer<T>&) const;
-    bool operator!=(const Pointer<T>&) const;
-    bool operator==(const int) const;
-        // true iff Pointer is null and int is zero
-    bool operator!=(const int) const;
-        // false iff Pointer is null and int is zero
+    bool operator==(const Pointer<T>& otherPointer) const;
+    //     if (t == otherPointer->t) return true;
+    //     else return false;
+    // }
+    bool operator!=(const Pointer<T>& otherPointer) const;
+    //     if (t == otherPointer->t) return false;
+    //     else return true;
+    // }
+    bool operator==(const int refInt) const;
+    //     if (this->t == NULL && refInt == 0) return true;
+    //     else return false;
+    // }
+    //     // true iff Pointer is null and int is zero
+    bool operator!=(const int refInt) const;
+    //     if (this->t == NULL && refInt == 0) return false;
+    //     else return true;
+    // }
+    //     // false iff Pointer is null and int is zero
 private:
 MyTombstone <T> t;
 };
-    // template <typename T>
-    // Pointer<T>::Pointer<T>(Pointer<T>& otherPointer) {
-    //     t = otherPointer.t;
-    // }
-
 #endif // __TOMBSTONES_H__

@@ -17,11 +17,6 @@ private:
 	int refCount;
 public:
 	//do I need to take refCount or always init refCount = 1
-	// void checkError ();
-	// MyTombstone<T>(T* obj, int count) {
-	// 	pointerToObj = obj;
-	// 	refCount = count;
-	// }
 	void setMyTombstone (T* obj, int count) {
 		pointerToObj = obj;
 	 	refCount = count;
