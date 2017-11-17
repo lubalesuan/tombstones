@@ -3,17 +3,28 @@
 #include <iostream>
 #include <stdlib.h>
 using namespace std;
-template <typename T>
+
+// template <class T> class MyTombstone;
+// template <class T>
+// struct MyTombstone{
+// 	T* pointerToObj;
+// 	int refCount;
+// };
+template <class T>
 class MyTombstone {
 private:
 	T* pointerToObj;
 	int refCount;
 public:
-	//do I need to take refcount or always init refCount = 1
+	//do I need to take refCount or always init refCount = 1
 	// void checkError ();
-	MyTombstone(T* obj, int count) {
+	// MyTombstone<T>(T* obj, int count) {
+	// 	pointerToObj = obj;
+	// 	refCount = count;
+	// }
+	void setMyTombstone (T* obj, int count) {
 		pointerToObj = obj;
-		refCount = count;
+	 	refCount = count;
 	}
 	int incrementRefCount() {
 		refCount++;
@@ -23,7 +34,7 @@ public:
 		refCount--;		
 		return refCount;
 	}
-	// int getRefCount() {
+	// int getrefCount() {
 
 	// }
 	void deleteMyTombstone () {
@@ -35,11 +46,11 @@ public:
 			error("Your pointer is dangling!");
 		}
 		//no pointers pointing to tombstone, but object isn't deleted
-		if (refcount == 0 && pointerToObj) {
+		if (refCount == 0 && pointerToObj) {
 			error("Attention: your memory is leaking.");
 		}
 		//no pointers pointing to obj, object is deleted -> reclaim tombstone
-		if (refcount == 0 && !pointerToObj) {
+		if (refCount == 0 && !pointerToObj) {
 			deleteMyTombstone();
 		}
 	}
@@ -51,5 +62,5 @@ public:
     	cout << "ERROR: " << text;
     exit(-1);
 	}
-}
+};
 #endif // __TOMBSTONES_H__
