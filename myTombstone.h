@@ -4,57 +4,84 @@
 #include <stdlib.h>
 using namespace std;
 
-// template <class T> class MyTombstone;
-// template <class T>
-// struct MyTombstone{
-// 	T* pointerToObj;
-// 	int refCount;
-// };
 template <class T>
 class MyTombstone {
 private:
 	T* pointerToObj;
-	int refCount;
+	int refCount = 0;
+	bool deleted = false;
 public:
 	//do I need to take refCount or always init refCount = 1
-	void setMyTombstone (T* obj, int count) {
-		pointerToObj = obj;
-	 	refCount = count;
-	}
-	int incrementRefCount() {
-		refCount++;
-		return refCount;
-	}
-	int decrementRefCount() {
-		refCount--;		
-		return refCount;
-	}
-	// int getrefCount() {
-
+	// void setMyTombstone (T* obj, int count) {
+	// 	pointerToObj = obj;
+	//  	refCount = count;
 	// }
+	void setMyTombstone(T* obj) {
+		pointerToObj = obj;
+	}
+	void incrementRefCount() {
+		char const *cn = "call increment refcount \n";
+		
+		refCount++;
+		printObj(cn);
+		// return refCount;
+	}
+	void decrementRefCount() {
+		char const *cn = "call decrement refCount\n";
+		refCount--;	
+		checkError();
+		printObj(cn);	
+		// return refCount;
+	}
+	int getrefCount() const{
+		return refCount;
+	}
 	void deleteMyTombstone () {
-		delete this;
+		cout << "deleting tombstone\n";
+		deleted = true;
+		pointerToObj = 0;
+		refCount = 0;
 	}
 	void checkError () {
 		//if object tombstone is pointing to is null
-		if (!*pointerToObj) {
-			error("Your pointer is dangling!");
+		if (deleted) {
+			cout << "Tester0" << endl;
+		// 	error("Attempted to double delete: ");
+		// }
+		// if (pointerToObj == 0 && refCount > 0) {
+		// 	cout << "Tester1" << endl;
+			error("There is a dangling pointer concerning address: ");
 		}
 		//no pointers pointing to tombstone, but object isn't deleted
-		if (refCount == 0 && pointerToObj) {
-			error("Attention: your memory is leaking.");
+		printObj("checkError ");
+		if (refCount <= 0 && pointerToObj) {
+			cout << "Tester2" << endl;
+			error("There is a memory leak concerning address: ");
 		}
 		//no pointers pointing to obj, object is deleted -> reclaim tombstone
-		if (refCount == 0 && !pointerToObj) {
-			deleteMyTombstone();
-		}
+		// if (refCount == 0 && !pointerToObj) {
+		// 	{cout << "Tester3" << endl;
+		// 	 deleteMyTombstone();
+		// 	 printObj();
+		// }
+		// }
 	}
-
-	T* getObj () {
+	bool getDeleted() const {
+		return deleted;
+	}
+ 
+	T* getObj () const{
 		return pointerToObj;
 	}
+
+	void printObj(char const* funcname) const{
+		if (pointerToObj == 0)
+			cout << funcname << " printing object: " << "NULL refCount: " << refCount << " \n\n";
+		else
+			cout << "printing object: " << *pointerToObj << " refCount: " << refCount << " \n\n";
+	}
 	void error(const char *text) {
-    	cout << "ERROR: " << text;
+    	cout << "ERROR: " << text << getObj() << endl;
     exit(-1);
 	}
 };
