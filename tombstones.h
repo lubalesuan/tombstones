@@ -4,29 +4,19 @@
 
 #if !defined(__TOMBSTONES_H__)
 #define __TOMBSTONES_H__
-#include "myTombstone.h"
+#include "tombstones.cc"
 #include <iostream>
 #include <stdlib.h>
 using namespace std;
 template <class T> class Pointer;
 template <class T> void free(Pointer<T>& obj)
 {
-    // if (!obj.initialized) {
-    //     cout << "ERROR: Tried to release uninitialized pointer at address " << obj.t.getObj() << endl << "Aborting program...";
-    //     exit(0);
-    // }
-    // else{
-    //     cout << "From free\n";
-    //     obj.t.deleteMyTombstone();
-    // }
+    //free a pointer the approriate and designated way, by checking for an error first, then deleting the tombstone
+    //safely, unless it was never initialized to begin with, returning an error.
     if (!obj.initialized) {
-        cout << "ERROR: Tried to release uninitialized pointer  " << endl << "Aborting program...";
+        cout << "ERROR: Tried to release uninitialized pointer  " << endl << "Aborting program...\n";
         exit(0);
     } else {
-        char const* cn = "template <class T> void free(Pointer<T>& obj)";
-        cout << cn << "\n";
-        obj.pt->checkError();
-        obj.pt->printObj(cn);
         obj.pt->deleteMyTombstone();
     }
 }
@@ -36,88 +26,55 @@ template <class T>
 class Pointer {
 public:
     Pointer<T>() {
+        //only default constructor is whether it has been initialized or not, starting at false
         initialized = false;
-        cout << "Pointer<T>()\n";
-       //init self???  
     }
-        // default constructor
                                  
     Pointer<T>(Pointer<T>& otherPointer) {// copy constructor
-        // initialized = true;
-        char const *cn =  "From Pointer<T>(Pointer<T>& otherPointer) {\n";
-        cout << cn << "\n";
-        // // t.checkError();
-        // if (otherPointer.initialized) {
-        //     otherPointer.t.checkError();
-        //     pt = otherPointer.pt;
-        //     pt->incrementRefCount();
-        // }
-        //  t = otherPointer.t;
-        // t.incrementRefCount();
+
+        //we first make sure the Pointer taken as an argument has no errors, then
+        //we have this Pointer point to the tombstone of the other Pointer, followed by incrementing its refcount.
+        //We then make sure the Pointer has been initialized.
         otherPointer.pt->checkError();
-        //DO I CHECK PT ERROR???
         pt = otherPointer.pt;
         pt->incrementRefCount();
-        cout << "pt\n";
-        pt->printObj(cn);
-        cout << "otherPointer\n";
-        otherPointer.pt->printObj(cn);
         initialized = true;
     }                       
     Pointer<T>(T* object) {// bootstrapping constructor, argument should always be a call to new
-        // initialized = true;
-        // t.setMyTombstone(object);
-        // t.incrementRefCount();
-        // t.printObj();
-        char const *cn =  "From Pointer<T>(T* object) { ";
-        cout << cn << "\n";
+
+        //essentially the same as the copy constructor except we create the tombstone from scratch,
+        //using setMyTombstone, and increment its refcount to 1. Again, initializing the Pointer.
         pt = new MyTombstone<T>();
         pt->setMyTombstone(object);
         pt->incrementRefCount();
-        pt->printObj(cn);
         initialized = true;
     }                           
     ~Pointer<T>() {// destructor
-        char const *cn =  "Destruction ";
-        cout << cn << "\n";
-        // t.printObj();
-        // if (!t.getDeleted()) {
-        //     t.decrementRefCount();
-        //     t.checkError();
-        // }
-        //t = NULL;
-        pt->checkError();
-        pt->decrementRefCount();
-        cout << "print end destruct\n";
-        pt->printObj(cn);
+
+        //The destructor which almost always does an error check when automatically called,
+        //only ignored when the tombstone is not deleted and null, as this is safe, but would be detected asa dangling pointer other wise.
+        if (pt->getDeleted() != true || pt->getObj() != 0) {
+            pt->checkError();
+            pt->decrementRefCount();
+        }        
     }
      T& operator*() const // deferencing
-     {//CHECK
-        // t.checkError();
-        char const *cn = "From operator* ";
-        cout << cn << "\n";
-        pt->checkError();
-        pt->printObj(cn);
+     {
+        //simply checks for an error, and returns the object of the tombstone in question.
+         pt->checkError();
         return *(pt->getObj());
-        // t.printObj();
-        // return *t.getObj(); //CHECK
     }               
     T* operator->() const {
-        char const* cn = "From operator-> ";
-        cout << cn << "\n";
+        //essentially the same as previous but for different cases
         pt->checkError();
-        pt->printObj(cn);
         return pt->getObj();
-        // t.checkError();
-        // t.printObj();
-        // return t.getObj(); //CHECK
     }  
-                    // field dereferencing
+                
     Pointer<T>& operator=(const Pointer<T>& otherPointer) {
-        char const *cn =  "From Pointer<T>& operator=(const Pointer<T>& otherPointer) ";
-        cout << cn << "\n";
+        //Assigns another Pointers tombstone to this Pointer, if this Pointer is intialized, we decrement the
+        //ref count from the old tombstone first, and then increment in the new one. Errors are checked throughout.
         otherPointer.pt->checkError();
-        // cout << "after check eq\n";
+        //to avoid seg faults only check errors for this pt, if it was initialized
         if (initialized) {
             pt->checkError();
             pt->decrementRefCount();      
@@ -125,80 +82,51 @@ public:
         pt = otherPointer.pt;
         pt->incrementRefCount();
         initialized = true;
-        cout << "end of = op\n";
-        pt->printObj(cn);
-        // t.decrementRefCount();
-        // t = otherPointer.t; //does it assign same object to this pointer?
-        // t.incrementRefCount();
-        // t.printObj();
-        // initialized = true;
-    }       // assignment
+    }     
+    
+
     friend void free<T>(Pointer<T>&);
-    //{
-    //    t = NULL;
-    //    ~Pointer<T>();  
-    //}           // delete pointed-at object
+
         // This is essentially the inverse of the new inside the call to
         // the bootstrapping constructor.
     //free deletes the tombstone and object and pointer
+
     // equality comparisons:
     bool operator==(const Pointer<T>& otherPointer) const {
-        char const* cn = "operator==(const Pointer<T>& otherPointer)\n";
-        cout << cn << "\n";
-        // t.checkError();
+        //Checks for errors, while seeing if two Pointers point to the same tombstone.
         pt->checkError();
-        pt->printObj(cn);
         return pt == otherPointer.pt;
 
-        // t.printObj();
-        // if (t.getObj() == otherPointer.t.getObj() && t.getrefCount() == otherPointer.t.getrefCount())  return true;
-        // else return false;
     }
+
+        //same as previous only now checks if the two Pointers point to different tombstones.
     bool operator!=(const Pointer<T>& otherPointer) const {
-        char const* cn = "operator!=(const Pointer<T>& otherPointer)";
-        cout << cn << "\n";
         pt->checkError();
-        pt->printObj(cn);
         return pt != otherPointer.pt;
-        // t.checkError();
-        // t.printObj();
-        // if (t.getObj() != otherPointer.t.getObj()) return true;
-        // else return false;
+
     }
     bool operator==(const int refInt) const {
-        char const* cn =  "operator==(const int refInt)";
-        cout << cn << "\n";
+
+        //Sees if a Pointer's object is equal to a given int. A special case is included for NULL.
+        //Essentially looking to the memory to see if its NULL and checking that case first, to ensure no seg faults.
         pt->checkError();
-        return *(pt->getObj()) == refInt;
-       //  t.checkError();
-       //  t.printObj();
-       // if (t.getObj() == 0x0)
-       //      if (0 == refInt) return true;
-       //      else return false;
-       //  else{
-       //      if (*(t.getObj()) == refInt) return true;
-       //      else return false;
-       //  }
+        if (pt->getObj() == 0) return refInt == 0;
+        else return *(pt->getObj()) == refInt;
     }
-        // true iff Pointer is null and int is zero
+
     bool operator!=(const int refInt) const {
-       char const* cn =  "operator!=(const int refInt)";
-        cout << cn << "\n";
+
+        //Same as previous, but now testing for the inequality of the Pointer and int in question.
         pt->checkError();
-        return *(pt->getObj()) != refInt;
-        // t.checkError();
-        // t.printObj();
-        // if (t.getObj() == 0x0)
-        //     if (0 != refInt) return true;
-        //     else return false;
-        // else{
-        //     if (*(t.getObj()) != refInt) return true;
-        //     else return false;
-        // }
+        if (pt->getObj() == 0) return refInt != 0;
+        else return *(pt->getObj()) != refInt;
     }
-        // false iff Pointer is null and int is zero
+    //oprtional error checking for pointers
+    void setCheckError(bool check) {
+        pt->setCheckError(check);
+    }
+//only private variable is the Pointer's pointer to a tombstone
 private:
-    // MyTombstone<T> t;
     MyTombstone<T>* pt;
     bool initialized;
 };
